@@ -837,6 +837,223 @@
   ::-webkit-scrollbar { width:6px; }
   ::-webkit-scrollbar-track { background:rgba(10,10,18,0.5); }
   ::-webkit-scrollbar-thumb { background:linear-gradient(var(--neon-cyan),var(--neon-pink)); border-radius:3px; }
+
+  /* ===== MOBILE SIDEBAR OVERLAY BACKDROP ===== */
+  .sidebar-backdrop {
+    display:none; position:fixed; inset:0; z-index:45;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+    opacity:0; transition:opacity 0.3s;
+  }
+  .sidebar-backdrop.visible { opacity:1; }
+
+  /* ===== TOUCH ACTION FOR CANVAS ELEMENTS ===== */
+  .canvas-display canvas,
+  .gear-display canvas,
+  .trackball-display canvas,
+  .atom-display canvas,
+  .dna-display canvas,
+  .cosmos-display canvas,
+  .geo-viz canvas,
+  .pipe-cell canvas {
+    touch-action: none;
+  }
+  .gear-display,
+  .trackball-display,
+  .atom-display,
+  .dna-display,
+  .cosmos-display {
+    touch-action: none;
+  }
+
+  /* ===== MOBILE HAMBURGER BUTTON (hidden on desktop) ===== */
+  .topbar-hamburger {
+    display:none; width:36px; height:36px; border-radius:8px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    color:#888; font-size:18px; cursor:pointer;
+    align-items:center; justify-content:center; transition:all 0.2s;
+    margin-right:10px; flex-shrink:0;
+  }
+  .topbar-hamburger:hover { background:rgba(0,247,255,0.1); color:var(--neon-cyan); }
+
+  /* ===== RESPONSIVE: TABLET (<=1024px) ===== */
+  @media (max-width: 1024px) {
+    .topbar-center { gap:12px; }
+    .topbar-status span { display:none; }
+    .content-area { padding:20px; }
+    .panel { padding:20px; }
+    .panel-grid { grid-template-columns:1fr; }
+    .gear-display, .trackball-display { height:350px; }
+    .knob-row { gap:20px; }
+  }
+
+  /* ===== RESPONSIVE: MOBILE (<=768px) ===== */
+  @media (max-width: 768px) {
+    :root {
+      --topbar-h: 44px;
+      --bottombar-h: 32px;
+    }
+
+    /* Hamburger visible */
+    .topbar-hamburger { display:flex; }
+
+    /* Topbar compact */
+    .topbar { padding:0 12px; }
+    .topbar-logo { font-size:0.75rem; letter-spacing:2px; }
+    .topbar-center { display:none; }
+    .topbar-page-title { font-size:0.55rem; letter-spacing:2px; }
+    .topbar-clock { font-size:0.65rem; }
+    .topbar-divider { display:none; }
+    .topbar-btn { width:28px; height:28px; font-size:12px; }
+
+    /* Sidebar becomes overlay drawer */
+    .sidebar {
+      position:fixed; top:var(--topbar-h); bottom:var(--bottombar-h);
+      left:0; z-index:50;
+      width:220px; min-width:220px;
+      transform:translateX(-100%);
+      transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      border-right:1px solid rgba(0,247,255,0.15);
+      box-shadow:4px 0 30px rgba(0,0,0,0.6);
+    }
+    .sidebar .nav-label { opacity:1; width:auto; }
+    .sidebar.mobile-open {
+      transform:translateX(0);
+    }
+    .sidebar-toggle { display:none; }
+    .sidebar-backdrop.mobile-show { display:block; }
+
+    /* Content area */
+    .content-area { padding:16px 12px; }
+    .page-header { margin-bottom:18px; }
+    .page-header h2 { font-size:1.1rem; letter-spacing:3px; }
+    .page-header .page-desc { font-size:0.7rem; }
+
+    /* Panels */
+    .panel { padding:16px; margin-bottom:16px; border-radius:12px; }
+    .panel-title { font-size:0.7rem; letter-spacing:3px; margin-bottom:16px; }
+    .panel-grid { grid-template-columns:1fr; gap:16px; }
+
+    /* Buttons */
+    .btn-row { gap:8px; }
+    .neo-btn { padding:10px 16px; font-size:0.6rem; letter-spacing:2px; }
+
+    /* Sliders - bigger touch targets */
+    .neo-slider { height:8px; }
+    .neo-slider::-webkit-slider-thumb { width:28px; height:28px; }
+    .slider-fill { height:8px; }
+
+    /* Toggles - bigger */
+    .neo-toggle { width:52px; height:26px; }
+    .neo-toggle .knob { width:20px; height:20px; }
+    .neo-toggle.active .knob { left:28px; }
+    .toggle-row { gap:14px; }
+
+    /* Knobs */
+    .dial { width:70px; height:70px; }
+    .knob-row { gap:16px; }
+
+    /* Canvas displays */
+    .canvas-display { height:220px; }
+    .gear-display, .trackball-display { height:300px; }
+    .atom-display { height:clamp(260px, 50vh, 600px); }
+    .cosmos-display { height:clamp(260px, 50vh, 600px); }
+    .dna-display { height:clamp(280px, 55vh, 650px); }
+    .geo-viz { height:200px; }
+
+    /* Readout bars */
+    .gear-readout-bar,
+    .trackball-readout-bar,
+    .atom-readout-bar,
+    .cosmos-readout-bar,
+    .dna-readout { font-size:0.4rem; gap:10px; letter-spacing:1px; }
+
+    /* Value cards */
+    .gear-value-display,
+    .trackball-axis-row,
+    .shell-stat-row { gap:8px; }
+    .gear-value-card,
+    .trackball-axis-card,
+    .shell-stat-card { padding:10px 12px; min-width:70px; }
+    .gear-value-card .gv-val,
+    .trackball-axis-card .ta-val { font-size:1.1rem; }
+    .shell-stat-card .ss-val { font-size:0.9rem; }
+
+    /* Rocker switches */
+    .rocker-row { gap:14px; }
+    .rocker { width:40px; height:72px; }
+
+    /* Toggle bank */
+    .toggle-bank { grid-template-columns:repeat(auto-fit,minmax(75px,1fr)); gap:8px; }
+    .bank-btn { padding:10px 6px; }
+
+    /* Level meters */
+    .level-row { gap:8px; }
+    .level-meter { height:100px; }
+
+    /* Spectrum */
+    .spectrum-bar { height:60px; }
+
+    /* Ring row */
+    .ring-row { gap:16px; }
+    .progress-ring { width:70px; height:70px; }
+
+    /* Hex grid */
+    .hex-btn { width:42px; height:48px; font-size:0.5rem; }
+
+    /* Pipe game */
+    .pipe-queue-item { width:40px; height:40px; }
+    .pipe-stats { gap:14px; font-size:0.55rem; }
+    .pipe-stats .ps-val { font-size:0.9rem; }
+
+    /* Bottom bar compact */
+    .bottombar { padding:0 10px; font-size:0.55rem; }
+    .bottombar-center { gap:10px; }
+    .bottombar-left .bb-item:nth-child(2) { display:none; }
+    .bb-btn { padding:2px 8px; font-size:0.55rem; }
+
+    /* Help modal */
+    .help-modal { width:calc(100vw - 32px); max-width:520px; padding:24px 20px; }
+    .help-modal h3 { font-size:0.85rem; }
+
+    /* Debug console */
+    .debug-console.open { height:180px; }
+
+    /* Toast */
+    .toast { right:16px; bottom:40px; font-size:0.55rem; padding:10px 16px; }
+
+    /* Glitch text */
+    .glitch { font-size:0.9rem; }
+
+    /* Cosmos controls */
+    .cosmos-reaction-row { flex-wrap:wrap; gap:8px; }
+  }
+
+  /* ===== RESPONSIVE: SMALL PHONE (<=480px) ===== */
+  @media (max-width: 480px) {
+    .topbar-logo { font-size:0.65rem; letter-spacing:1px; }
+    .topbar-right { gap:6px; }
+    .topbar-clock { display:none; }
+    .content-area { padding:12px 8px; }
+    .panel { padding:14px 12px; }
+    .page-header h2 { font-size:0.9rem; letter-spacing:2px; }
+    .btn-row { flex-direction:column; gap:6px; }
+    .neo-btn { width:100%; text-align:center; }
+    .toggle-row { flex-direction:column; gap:10px; }
+    .knob-row { gap:12px; }
+    .dial { width:60px; height:60px; }
+    .canvas-display { height:180px; }
+    .gear-display, .trackball-display { height:250px; }
+    .atom-display, .cosmos-display { height:clamp(220px, 45vh, 500px); }
+    .dna-display { height:clamp(240px, 50vh, 550px); }
+    .geo-viz { height:160px; }
+    .gear-value-display,
+    .trackball-axis-row,
+    .shell-stat-row { flex-wrap:wrap; justify-content:center; }
+    .bottombar-center .bb-item:last-child { display:none; }
+    .rocker-row { gap:10px; }
+    .cosmos-reaction-row .neo-btn { padding:8px 12px; font-size:0.55rem; }
+    .pipe-controls-row { flex-wrap:wrap; }
+  }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
@@ -853,6 +1070,7 @@
 <!-- ============ TOP BAR ============ -->
 <div class="topbar">
   <div class="topbar-left">
+    <div class="topbar-hamburger" id="hamburgerBtn" onclick="toggleMobileSidebar()">☰</div>
     <div class="topbar-logo">NCR</div>
     <div class="topbar-divider"></div>
     <div class="topbar-page-title" id="topPageTitle">COMMAND MATRIX</div>
@@ -929,6 +1147,7 @@
       </div>
     </div>
   </div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
 
   <!-- CONTENT AREA -->
   <div class="content-area" id="contentArea">
@@ -1595,6 +1814,8 @@ let currentPage = 'commands';
 function navigate(pageId, navEl) {
   if (pageId === currentPage) return;
   currentPage = pageId;
+  /* Auto-close mobile sidebar on nav */
+  if (window.innerWidth <= 768) closeMobileSidebar();
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(n => n.classList.remove('active'));
   if (navEl) navEl.classList.add('active');
   document.getElementById('topPageTitle').textContent = pages[pageId] || pageId.toUpperCase();
@@ -1637,6 +1858,50 @@ function toggleSidebar() {
     { opacity: 0, x: -10 },
     { opacity: sb.classList.contains('expanded') ? 1 : 0, x: 0, duration: 0.3, stagger: 0.03 });
 }
+
+/* Mobile sidebar overlay toggle */
+function toggleMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  const isOpen = sb.classList.contains('mobile-open');
+  if (isOpen) { closeMobileSidebar(); } else {
+    sb.classList.add('mobile-open');
+    bd.classList.add('mobile-show');
+    requestAnimationFrame(() => bd.classList.add('visible'));
+  }
+}
+function closeMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  sb.classList.remove('mobile-open');
+  bd.classList.remove('visible');
+  setTimeout(() => bd.classList.remove('mobile-show'), 300);
+}
+
+/* Swipe-to-open / swipe-to-close sidebar */
+(function initSwipeGestures() {
+  let touchStartX = 0, touchStartY = 0, swiping = false;
+  const EDGE_ZONE = 30, SWIPE_THRESHOLD = 50;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    swiping = true;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!swiping) return;
+    swiping = false;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    if (dy > Math.abs(dx)) return; // vertical scroll, ignore
+    const sb = document.getElementById('sidebar');
+    const isOpen = sb.classList.contains('mobile-open');
+    if (!isOpen && touchStartX < EDGE_ZONE && dx > SWIPE_THRESHOLD) {
+      toggleMobileSidebar();
+    } else if (isOpen && dx < -SWIPE_THRESHOLD) {
+      closeMobileSidebar();
+    }
+  }, { passive: true });
+})();
 
 /* ============================================================
    CLOCK & UPTIME
