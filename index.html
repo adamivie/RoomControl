@@ -2079,6 +2079,7 @@ function updateSlider(input, valId, color) {
   const fillPx=(thumbW/2)+pct*(trackW-thumbW);
   const fillPct=(fillPx/trackW)*100;
   gsap.to(fill,{width:fillPct+'%',duration:0.3,ease:'power2.out'});
+  const target=parseFloat(input.value);
   gsap.to({v:parseFloat(valEl.textContent)},{v:target,duration:0.3,ease:'power2.out',onUpdate:function(){valEl.textContent=Math.round(this.targets()[0].v);}});
   gsap.fromTo(valEl,{textShadow:'0 0 20px currentColor'},{textShadow:'0 0 8px currentColor',duration:0.4});
 }
