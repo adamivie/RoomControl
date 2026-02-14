@@ -909,15 +909,21 @@
     .sidebar {
       position:fixed; top:var(--topbar-h); bottom:var(--bottombar-h);
       left:0; z-index:50;
-      width:220px; min-width:220px;
+      width:220px !important; min-width:220px !important;
+      height:auto;
       transform:translateX(-100%);
       transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
       border-right:1px solid rgba(0,247,255,0.15);
       box-shadow:4px 0 30px rgba(0,0,0,0.6);
     }
+    .sidebar.expanded {
+      width:220px !important; min-width:220px !important;
+      transform:translateX(-100%);
+    }
     .sidebar .nav-label { opacity:1; width:auto; }
-    .sidebar.mobile-open {
-      transform:translateX(0);
+    .sidebar.mobile-open,
+    .sidebar.expanded.mobile-open {
+      transform:translateX(0) !important;
     }
     .sidebar-toggle { display:none; }
     .sidebar-backdrop.mobile-show { display:block; }
