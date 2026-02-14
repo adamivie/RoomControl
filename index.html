@@ -612,10 +612,8 @@
     text-shadow: 0 0 10px var(--neon-cyan);
     box-shadow: 0 0 30px rgba(0,247,255,0.2);
     transform: translateX(400px);
-    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     backdrop-filter: blur(10px);
   }
-  .toast.show { transform: translateX(0); }
 
   /* ===== ANIMATED BORDER WIDGET ===== */
   .border-widget {
@@ -723,7 +721,15 @@
     border-radius: 3px;
     box-shadow: 0 0 10px var(--neon-cyan);
   }
+
+  /* GSAP initial states — panels start invisible for scroll entrance */
+  .panel { opacity: 0; }
+  .header h1, .header .subtitle { opacity: 0; }
 </style>
+
+<!-- GSAP + Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 </head>
 <body>
 
@@ -907,7 +913,94 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== FLUID BACKGROUND (Metaballs Simulation) =====
+gsap.registerPlugin(ScrollTrigger);
+
+// ============================================================
+//  GSAP ENTRANCE TIMELINE — header + panels fly in on load
+// ============================================================
+const entryTL = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+// Header — title drops in with scale, subtitle fades up
+entryTL
+  .fromTo('.header h1',
+    { opacity: 0, y: -60, scale: 0.7, filter: 'blur(12px)' },
+    { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 1.2 })
+  .fromTo('.header .subtitle',
+    { opacity: 0, y: 20, letterSpacing: '20px' },
+    { opacity: 0.8, y: 0, letterSpacing: '8px', duration: 0.8 }, '-=0.6');
+
+// Panels — staggered entrance with different origins per row
+entryTL.fromTo('.panel',
+  { opacity: 0, y: 80, scale: 0.88, rotateX: 8 },
+  { opacity: 1, y: 0, scale: 1, rotateX: 0,
+    duration: 0.9, stagger: { amount: 0.8, from: 'start' },
+    ease: 'back.out(1.4)',
+    clearProps: 'transform'
+  }, '-=0.4');
+
+// ============================================================
+//  GSAP SCROLL-TRIGGERED REVEALS — elements animate when visible
+// ============================================================
+gsap.utils.toArray('.neo-btn').forEach((btn, i) => {
+  gsap.from(btn, {
+    scrollTrigger: { trigger: btn, start: 'top 90%', toggleActions: 'play none none none' },
+    opacity: 0, x: i % 2 === 0 ? -30 : 30, duration: 0.5, delay: i * 0.05,
+    ease: 'power2.out'
+  });
+});
+
+gsap.utils.toArray('.slider-group').forEach((sg, i) => {
+  gsap.from(sg, {
+    scrollTrigger: { trigger: sg, start: 'top 92%' },
+    opacity: 0, x: -50, duration: 0.6, delay: i * 0.1, ease: 'power3.out'
+  });
+});
+
+gsap.utils.toArray('.progress-ring').forEach((ring, i) => {
+  gsap.from(ring, {
+    scrollTrigger: { trigger: ring, start: 'top 90%' },
+    opacity: 0, scale: 0, rotation: -180, duration: 0.8, delay: i * 0.15,
+    ease: 'back.out(1.7)'
+  });
+});
+
+gsap.utils.toArray('.dial').forEach((dial, i) => {
+  gsap.from(dial, {
+    scrollTrigger: { trigger: dial, start: 'top 92%' },
+    opacity: 0, scale: 0, rotation: -90, duration: 0.7, delay: i * 0.12,
+    ease: 'elastic.out(1, 0.5)'
+  });
+});
+
+// ============================================================
+//  GSAP MAGNETIC HOVER — panels subtly tilt toward cursor
+// ============================================================
+document.querySelectorAll('.panel').forEach(panel => {
+  panel.addEventListener('mousemove', e => {
+    const rect = panel.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 to 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    gsap.to(panel, {
+      rotateY: x * 4,
+      rotateX: -y * 4,
+      transformPerspective: 800,
+      duration: 0.4,
+      ease: 'power2.out',
+      overwrite: 'auto'
+    });
+  });
+  panel.addEventListener('mouseleave', () => {
+    gsap.to(panel, {
+      rotateY: 0, rotateX: 0,
+      duration: 0.6, ease: 'elastic.out(1, 0.4)',
+      overwrite: 'auto'
+    });
+  });
+});
+
+// ============================================================
+//  FLUID BACKGROUND (Metaballs) — unchanged
+// ============================================================
 const fluidCanvas = document.getElementById('fluid-bg');
 const fCtx = fluidCanvas.getContext('2d');
 let fw, fh;
@@ -939,7 +1032,6 @@ function drawFluid() {
     if (b.x > fw + b.r) b.x = -b.r;
     if (b.y < -b.r) b.y = fh + b.r;
     if (b.y > fh + b.r) b.y = -b.r;
-
     const grad = fCtx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
     grad.addColorStop(0, `hsla(${b.hue}, 100%, 60%, 0.15)`);
     grad.addColorStop(1, `hsla(${b.hue}, 100%, 60%, 0)`);
@@ -950,14 +1042,14 @@ function drawFluid() {
 }
 drawFluid();
 
-// ===== MOUSE TRAIL =====
+// ============================================================
+//  MOUSE TRAIL — unchanged
+// ============================================================
 const trail = [];
 const TRAIL_LENGTH = 20;
 document.addEventListener('mousemove', e => {
   trail.push({ x: e.clientX, y: e.clientY, t: Date.now() });
   if (trail.length > TRAIL_LENGTH) trail.shift();
-
-  // Move nearest metaball toward cursor
   let nearest = metaballs[0], dist = Infinity;
   metaballs.forEach(b => {
     const d = Math.hypot(b.x - e.clientX, b.y - e.clientY);
@@ -966,7 +1058,6 @@ document.addEventListener('mousemove', e => {
   nearest.vx += (e.clientX - nearest.x) * 0.001;
   nearest.vy += (e.clientY - nearest.y) * 0.001;
 });
-
 function renderTrail() {
   document.querySelectorAll('.trail-dot').forEach(d => d.remove());
   trail.forEach((p, i) => {
@@ -976,50 +1067,96 @@ function renderTrail() {
     dot.className = 'trail-dot';
     const size = (1 - age) * 16;
     const hue = 180 + i * 8;
-    dot.style.cssText = `left:${p.x - size/2}px;top:${p.y - size/2}px;width:${size}px;height:${size}px;background:hsla(${hue},100%,60%,${(1-age)*0.6});box-shadow:0 0 ${size}px hsla(${hue},100%,60%,0.4);`;
+    dot.style.cssText = `left:${p.x-size/2}px;top:${p.y-size/2}px;width:${size}px;height:${size}px;background:hsla(${hue},100%,60%,${(1-age)*0.6});box-shadow:0 0 ${size}px hsla(${hue},100%,60%,0.4);`;
     document.body.appendChild(dot);
   });
   requestAnimationFrame(renderTrail);
 }
 renderTrail();
 
-// ===== BUTTON DRIP EFFECT =====
+// ============================================================
+//  BUTTON FIRE — GSAP elastic punch + drip ripple
+// ============================================================
 function fireBtn(btn, color) {
+  // Ink drip ripple
   const drip = document.createElement('span');
   drip.className = 'drip';
   const size = Math.max(btn.offsetWidth, btn.offsetHeight);
   drip.style.width = drip.style.height = size + 'px';
-  drip.style.left = '50%';
-  drip.style.top = '50%';
+  drip.style.left = '50%'; drip.style.top = '50%';
   drip.style.marginLeft = -size/2 + 'px';
   drip.style.marginTop = -size/2 + 'px';
   btn.appendChild(drip);
   setTimeout(() => drip.remove(), 800);
 
+  // GSAP elastic punch
+  gsap.timeline()
+    .to(btn, { scale: 0.85, duration: 0.08, ease: 'power2.in' })
+    .to(btn, { scale: 1.15, duration: 0.15, ease: 'power2.out' })
+    .to(btn, { scale: 1, duration: 0.6, ease: 'elastic.out(1, 0.3)' })
+    .to(btn, { filter: 'brightness(2.5)', duration: 0.05 }, 0)
+    .to(btn, { filter: 'brightness(1)', duration: 0.4 }, 0.1);
+
+  // Neon flash on parent panel
+  const panel = btn.closest('.panel');
+  if (panel) {
+    const colors = {
+      cyan: 'rgba(0,247,255,0.12)', pink: 'rgba(255,0,228,0.12)',
+      green: 'rgba(57,255,20,0.12)', orange: 'rgba(255,106,0,0.12)',
+      purple: 'rgba(176,0,255,0.12)'
+    };
+    gsap.timeline()
+      .to(panel, { boxShadow: `0 0 60px ${colors[color] || colors.cyan}, inset 0 0 40px ${colors[color] || colors.cyan}`, duration: 0.15 })
+      .to(panel, { clearProps: 'boxShadow', duration: 0.8, ease: 'power2.out' });
+  }
+
   const msgs = {
-    cyan: '⚡ CYAN SURGE ACTIVATED',
-    pink: '♥ PINK PULSE ENGAGED',
-    green: '✦ GREEN FLUX ONLINE',
-    orange: '◆ WARP FIELD INITIATED',
+    cyan: '⚡ CYAN SURGE ACTIVATED', pink: '♥ PINK PULSE ENGAGED',
+    green: '✦ GREEN FLUX ONLINE', orange: '◆ WARP FIELD INITIATED',
     purple: '☽ VOID CHANNEL OPENED'
   };
   showToast(msgs[color] || '◈ TRIGGERED');
 }
 
-// ===== SLIDER UPDATE =====
+// ============================================================
+//  SLIDER UPDATE — GSAP smooth fill + value counter
+// ============================================================
 function updateSlider(input, valId, color) {
-  document.getElementById(valId).textContent = input.value;
+  const valEl = document.getElementById(valId);
   const fill = input.parentElement.querySelector('.slider-fill');
-  fill.style.width = input.value + '%';
+  const target = parseFloat(input.value);
+  gsap.to(fill, { width: target + '%', duration: 0.3, ease: 'power2.out' });
+  gsap.to({ v: parseFloat(valEl.textContent) }, {
+    v: target, duration: 0.3, ease: 'power2.out',
+    onUpdate: function() { valEl.textContent = Math.round(this.targets()[0].v); }
+  });
+  // Glow pulse on value label
+  gsap.fromTo(valEl, { textShadow: `0 0 20px currentColor` },
+    { textShadow: `0 0 8px currentColor`, duration: 0.4 });
 }
 
-// ===== TOGGLE SWITCH =====
+// ============================================================
+//  TOGGLE SWITCH — GSAP spring knob + glow flash
+// ============================================================
 function toggleSwitch(el) {
   el.classList.toggle('active');
-  showToast(el.classList.contains('active') ? '◈ ENABLED' : '◈ DISABLED');
+  const knob = el.querySelector('.knob');
+  const isActive = el.classList.contains('active');
+  gsap.to(knob, {
+    left: isActive ? 30 : 2,
+    duration: 0.5,
+    ease: 'elastic.out(1.2, 0.4)'
+  });
+  // Flash the whole toggle
+  gsap.timeline()
+    .to(el, { scale: 1.15, duration: 0.1 })
+    .to(el, { scale: 1, duration: 0.5, ease: 'elastic.out(1, 0.3)' });
+  showToast(isActive ? '◈ ENABLED' : '◈ DISABLED');
 }
 
-// ===== DIAL / KNOB =====
+// ============================================================
+//  DIAL / KNOB — GSAP smooth rotation
+// ============================================================
 let activeDial = null, dialStartY = 0, dialStartVal = 0;
 function startDial(e, dial) {
   activeDial = dial;
@@ -1027,22 +1164,29 @@ function startDial(e, dial) {
   dialStartVal = parseFloat(dial.dataset.value) || 0;
   dial.style.cursor = 'grabbing';
   e.preventDefault();
+  // Scale up while grabbing
+  gsap.to(dial, { scale: 1.1, duration: 0.2, ease: 'power2.out' });
 }
 document.addEventListener('mousemove', e => {
   if (!activeDial) return;
   const delta = (dialStartY - e.clientY) * 1.5;
   let val = Math.max(-150, Math.min(150, dialStartVal + delta));
   activeDial.dataset.value = val;
-  activeDial.style.transform = `rotate(${val}deg)`;
+  gsap.to(activeDial, { rotation: val, duration: 0.15, ease: 'power2.out', overwrite: 'auto' });
   const valEl = activeDial.parentElement.querySelector('.knob-value');
   valEl.textContent = Math.round(val) + '°';
 });
 document.addEventListener('mouseup', () => {
-  if (activeDial) activeDial.style.cursor = 'grab';
+  if (activeDial) {
+    activeDial.style.cursor = 'grab';
+    gsap.to(activeDial, { scale: 1, duration: 0.4, ease: 'elastic.out(1, 0.4)' });
+  }
   activeDial = null;
 });
 
-// ===== GEOMETRIC VISUALIZER =====
+// ============================================================
+//  GEOMETRIC VISUALIZER — unchanged
+// ============================================================
 const geoCanvas = document.getElementById('geoCanvas');
 const gCtx = geoCanvas.getContext('2d');
 function resizeGeo() {
@@ -1059,14 +1203,11 @@ function drawGeo() {
   const cx = geoCanvas.width / 2;
   const cy = geoCanvas.height / 2;
   geoTime += 0.015;
-
-  // Rotating geometric shapes
   for (let ring = 0; ring < 4; ring++) {
     const sides = 3 + ring * 2;
     const radius = 30 + ring * 25;
     const rot = geoTime * (ring % 2 === 0 ? 1 : -1) * (0.5 + ring * 0.3);
     const hue = [180, 300, 120, 30][ring];
-
     gCtx.beginPath();
     for (let i = 0; i <= sides; i++) {
       const angle = (i / sides) * Math.PI * 2 + rot;
@@ -1083,8 +1224,6 @@ function drawGeo() {
     gCtx.stroke();
     gCtx.shadowBlur = 0;
   }
-
-  // Orbiting dots
   for (let i = 0; i < 24; i++) {
     const angle = (i / 24) * Math.PI * 2 + geoTime * 1.5;
     const orbitR = 80 + Math.sin(geoTime + i) * 15;
@@ -1099,8 +1238,6 @@ function drawGeo() {
     gCtx.fill();
     gCtx.shadowBlur = 0;
   }
-
-  // Connecting lines
   gCtx.beginPath();
   for (let i = 0; i < 60; i++) {
     const t = i / 60;
@@ -1111,14 +1248,15 @@ function drawGeo() {
   gCtx.strokeStyle = 'rgba(0, 247, 255, 0.15)';
   gCtx.lineWidth = 0.5;
   gCtx.stroke();
-
   requestAnimationFrame(drawGeo);
 }
 drawGeo();
 
-// ===== HEXAGONAL BUTTONS =====
+// ============================================================
+//  HEXAGONAL BUTTONS — GSAP stagger entrance + click flash
+// ============================================================
 const hexGrid = document.getElementById('hexGrid');
-const hexColors = ['#00f7ff', '#ff00e4', '#39ff14', '#ff6a00', '#b000ff', '#00f7ff', '#ff00e4', '#39ff14', '#ff6a00', '#b000ff', '#00f7ff', '#ff00e4'];
+const hexColors = ['#00f7ff','#ff00e4','#39ff14','#ff6a00','#b000ff','#00f7ff','#ff00e4','#39ff14','#ff6a00','#b000ff','#00f7ff','#ff00e4'];
 hexColors.forEach((c, i) => {
   const btn = document.createElement('button');
   btn.className = 'hex-btn';
@@ -1126,18 +1264,25 @@ hexColors.forEach((c, i) => {
   btn.style.boxShadow = `0 0 10px ${c}44, inset 0 0 8px ${c}22`;
   btn.textContent = (i + 1).toString(16).toUpperCase();
   btn.onclick = () => {
-    btn.style.background = `linear-gradient(135deg, ${c}88, ${c}44)`;
-    btn.style.boxShadow = `0 0 25px ${c}88, inset 0 0 15px ${c}44`;
-    setTimeout(() => {
-      btn.style.background = `linear-gradient(135deg, ${c}33, ${c}11)`;
-      btn.style.boxShadow = `0 0 10px ${c}44, inset 0 0 8px ${c}22`;
-    }, 300);
+    gsap.timeline()
+      .to(btn, { scale: 0.7, duration: 0.08 })
+      .to(btn, { scale: 1.3, background: `linear-gradient(135deg, ${c}aa, ${c}66)`,
+        boxShadow: `0 0 30px ${c}aa, inset 0 0 20px ${c}55`, duration: 0.15 })
+      .to(btn, { scale: 1, background: `linear-gradient(135deg, ${c}33, ${c}11)`,
+        boxShadow: `0 0 10px ${c}44, inset 0 0 8px ${c}22`, duration: 0.6, ease: 'elastic.out(1, 0.3)' });
     showToast(`◈ HEX NODE ${(i+1).toString(16).toUpperCase()} ACTIVATED`);
   };
   hexGrid.appendChild(btn);
 });
+// Stagger entrance for hex buttons
+gsap.from('.hex-btn', {
+  scrollTrigger: { trigger: '#hexGrid', start: 'top 90%' },
+  opacity: 0, scale: 0, rotation: 180, stagger: 0.04, duration: 0.5, ease: 'back.out(2)'
+});
 
-// ===== SPECTRUM BAR =====
+// ============================================================
+//  SPECTRUM BAR — unchanged (rAF is fine here)
+// ============================================================
 const specBar = document.getElementById('spectrumBar');
 for (let i = 0; i < 32; i++) {
   const bar = document.createElement('div');
@@ -1156,7 +1301,9 @@ function animateSpectrum() {
 }
 animateSpectrum();
 
-// ===== LEVEL METERS =====
+// ============================================================
+//  LEVEL METERS — unchanged
+// ============================================================
 const levelRow = document.getElementById('levelRow');
 const levelColors = [
   { color: 'var(--neon-cyan)', label: 'L' },
@@ -1181,7 +1328,9 @@ function animateLevels() {
 }
 animateLevels();
 
-// ===== INK DRIP DIVIDER =====
+// ============================================================
+//  INK DRIP DIVIDER — unchanged
+// ============================================================
 const inkDiv = document.getElementById('inkDivider');
 for (let i = 0; i < 8; i++) {
   const blob = document.createElement('div');
@@ -1191,7 +1340,9 @@ for (let i = 0; i < 8; i++) {
   inkDiv.appendChild(blob);
 }
 
-// ===== FLOATING PARTICLES =====
+// ============================================================
+//  FLOATING PARTICLES — unchanged
+// ============================================================
 function spawnParticle() {
   const p = document.createElement('div');
   p.className = 'particle';
@@ -1203,7 +1354,9 @@ function spawnParticle() {
 }
 setInterval(spawnParticle, 600);
 
-// ===== PROGRESS RING ANIMATION =====
+// ============================================================
+//  PROGRESS RING ANIMATION — unchanged
+// ============================================================
 function animateRings() {
   document.querySelectorAll('.progress-ring').forEach((ring, i) => {
     const circ = ring.querySelector('.fg');
@@ -1219,63 +1372,98 @@ function animateRings() {
 }
 animateRings();
 
-// ===== TOAST =====
+// ============================================================
+//  TOAST — GSAP slide-in instead of CSS transition
+// ============================================================
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+  gsap.killTweensOf(toast);
+  gsap.fromTo(toast,
+    { x: 400, opacity: 0, scale: 0.8 },
+    { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' });
+  gsap.to(toast, { x: 400, opacity: 0, duration: 0.3, ease: 'power2.in', delay: 2 });
 }
 
-// ===== BURST MODE =====
+// ============================================================
+//  ⚡ BURST MODE — GSAP exploding particles from center
+// ============================================================
 function spawnBurst() {
-  for (let i = 0; i < 30; i++) {
-    setTimeout(() => {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      const size = 3 + Math.random() * 6;
-      const hue = Math.random() * 360;
-      const x = 40 + Math.random() * 20;
-      p.style.cssText = `width:${size}px;height:${size}px;left:${x}%;background:hsla(${hue},100%,60%,0.8);box-shadow:0 0 ${size*4}px hsla(${hue},100%,60%,0.6);animation-duration:${3 + Math.random() * 4}s;`;
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 7000);
-    }, i * 50);
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('div');
+    p.style.cssText = `position:fixed;pointer-events:none;z-index:999;border-radius:50%;`;
+    const size = 4 + Math.random() * 8;
+    const hue = Math.random() * 360;
+    p.style.width = p.style.height = size + 'px';
+    p.style.background = `hsla(${hue},100%,60%,0.9)`;
+    p.style.boxShadow = `0 0 ${size*3}px hsla(${hue},100%,60%,0.6)`;
+    p.style.left = cx + 'px'; p.style.top = cy + 'px';
+    document.body.appendChild(p);
+
+    const angle = (i / 40) * Math.PI * 2 + Math.random() * 0.5;
+    const dist = 150 + Math.random() * 300;
+    gsap.to(p, {
+      x: Math.cos(angle) * dist,
+      y: Math.sin(angle) * dist,
+      scale: 0,
+      opacity: 0,
+      duration: 1 + Math.random() * 0.8,
+      ease: 'power3.out',
+      onComplete: () => p.remove()
+    });
   }
 }
 
-// ===== RAIN MODE =====
+// ============================================================
+//  ☔ RAIN MODE — GSAP staggered neon rain
+// ============================================================
 function rainMode() {
-  for (let i = 0; i < 60; i++) {
-    setTimeout(() => {
-      const drop = document.createElement('div');
-      drop.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}%;width:2px;height:${10+Math.random()*20}px;background:linear-gradient(to bottom,var(--neon-pink),transparent);z-index:5;pointer-events:none;border-radius:1px;box-shadow:0 0 6px var(--neon-pink);animation:rainFall ${0.5+Math.random()*0.8}s linear forwards;`;
-      document.body.appendChild(drop);
-      setTimeout(() => drop.remove(), 1500);
-    }, i * 30);
+  for (let i = 0; i < 80; i++) {
+    const drop = document.createElement('div');
+    const h = 10 + Math.random() * 25;
+    drop.style.cssText = `position:fixed;top:-30px;left:${Math.random()*100}%;width:2px;height:${h}px;background:linear-gradient(to bottom,var(--neon-pink),transparent);z-index:5;pointer-events:none;border-radius:1px;box-shadow:0 0 8px var(--neon-pink);opacity:0;`;
+    document.body.appendChild(drop);
+    gsap.to(drop, {
+      y: window.innerHeight + 50,
+      opacity: 1,
+      duration: 0.4 + Math.random() * 0.6,
+      delay: i * 0.02,
+      ease: 'none',
+      onComplete: () => {
+        // Splash effect at bottom
+        gsap.to(drop, { scaleX: 3, scaleY: 0.2, opacity: 0, duration: 0.2, onComplete: () => drop.remove() });
+      }
+    });
   }
-  const style = document.createElement('style');
-  style.textContent = `@keyframes rainFall{to{transform:translateY(${window.innerHeight+30}px);opacity:0;}}`;
-  document.head.appendChild(style);
 }
 
-// ===== WAVE MODE =====
+// ============================================================
+//  〰 WAVE MODE — GSAP sequential panel wave
+// ============================================================
 function waveMode() {
-  const panels = document.querySelectorAll('.panel');
-  panels.forEach((p, i) => {
-    setTimeout(() => {
-      p.style.transform = 'translateY(-15px) scale(1.02)';
-      p.style.boxShadow = '0 0 40px rgba(57,255,20,0.3)';
-      setTimeout(() => {
-        p.style.transform = '';
-        p.style.boxShadow = '';
-      }, 400);
-    }, i * 120);
+  gsap.to('.panel', {
+    y: -20,
+    scale: 1.03,
+    boxShadow: '0 0 50px rgba(57,255,20,0.35), inset 0 0 20px rgba(57,255,20,0.08)',
+    duration: 0.3,
+    stagger: { amount: 0.6, from: 'start' },
+    ease: 'power2.out',
+    yoyo: true,
+    repeat: 1,
+    clearProps: 'all',
+    onComplete: () => {
+      // Re-assert opacity after clearProps
+      gsap.set('.panel', { opacity: 1 });
+    }
   });
 }
 
-// Startup toast
-setTimeout(() => showToast('◈ NEON CONTROL ROOM ONLINE'), 1000);
+// ============================================================
+//  STARTUP
+// ============================================================
+setTimeout(() => showToast('◈ NEON CONTROL ROOM ONLINE'), 1500);
 </script>
 </body>
 </html>
