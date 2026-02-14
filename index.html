@@ -4233,9 +4233,11 @@ function resizeCosmos() {
   const r = el.getBoundingClientRect();
   const w = Math.round(r.width), h = Math.round(r.height);
   if (w < 1 || h < 1) return;
+  const wasZero = (cosW === 0 || cosH === 0);
   cosmosCanvas.width = w; cosmosCanvas.height = h;
   cosW = w; cosH = h;
   if (cosmosStars.length === 0) cosmosInitStars();
+  if (wasZero || cosmosParticles.length === 0) cosmosRebuildParticles();
 }
 
 function cosmosInitStars() {
@@ -4615,7 +4617,6 @@ function cosmosLoop(ts) {
 
 // Init cosmos
 cosmosInitStars();
-cosmosRebuildParticles();
 requestAnimationFrame(cosmosLoop);
 
 /* ============================================================
