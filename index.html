@@ -312,7 +312,7 @@
   .neo-slider.pink-slider::-webkit-slider-thumb { border-color:var(--neon-pink); background:radial-gradient(circle at 30% 30%,rgba(255,0,228,0.4),var(--ink-dark)); box-shadow:0 0 15px var(--neon-pink); }
   .neo-slider.green-slider::-webkit-slider-thumb { border-color:var(--neon-green); background:radial-gradient(circle at 30% 30%,rgba(57,255,20,0.4),var(--ink-dark)); box-shadow:0 0 15px var(--neon-green); }
   .neo-slider.orange-slider::-webkit-slider-thumb { border-color:var(--neon-orange); background:radial-gradient(circle at 30% 30%,rgba(255,106,0,0.4),var(--ink-dark)); box-shadow:0 0 15px var(--neon-orange); }
-  .slider-track { position:relative; width:100%; }
+  .slider-track { position:relative; width:100%; --thumb-w:22px; }
   .slider-fill { position:absolute; top:50%;left:0; height:6px; border-radius:3px; transform:translateY(-50%); pointer-events:none; }
 
   /* ===== TOGGLE SWITCHES ===== */
@@ -940,6 +940,7 @@
     /* Sliders - bigger touch targets */
     .neo-slider { height:8px; }
     .neo-slider::-webkit-slider-thumb { width:28px; height:28px; }
+    .slider-track { --thumb-w:28px; }
     .slider-fill { height:8px; }
 
     /* Toggles - bigger */
@@ -2069,8 +2070,15 @@ function fireBtn(btn, color) {
    ============================================================ */
 function updateSlider(input, valId, color) {
   const valEl=document.getElementById(valId), fill=input.parentElement.querySelector('.slider-fill');
-  const target=parseFloat(input.value);
-  gsap.to(fill,{width:target+'%',duration:0.3,ease:'power2.out'});
+  const min=parseFloat(input.min)||0, max=parseFloat(input.max)||100;
+  const pct=((parseFloat(input.value)-min)/(max-min));
+  /* Account for thumb width: thumb center travels from thumbW/2 to (trackW - thumbW/2) */
+  const trackEl=input.parentElement;
+  const thumbW=parseFloat(getComputedStyle(trackEl).getPropertyValue('--thumb-w'))||22;
+  const trackW=trackEl.offsetWidth||300;
+  const fillPx=(thumbW/2)+pct*(trackW-thumbW);
+  const fillPct=(fillPx/trackW)*100;
+  gsap.to(fill,{width:fillPct+'%',duration:0.3,ease:'power2.out'});
   gsap.to({v:parseFloat(valEl.textContent)},{v:target,duration:0.3,ease:'power2.out',onUpdate:function(){valEl.textContent=Math.round(this.targets()[0].v);}});
   gsap.fromTo(valEl,{textShadow:'0 0 20px currentColor'},{textShadow:'0 0 8px currentColor',duration:0.4});
 }
@@ -4955,6 +4963,23 @@ gsap.fromTo('#page-commands .panel', { opacity: 0, y: 50, scale: 0.9 }, { opacit
 gsap.fromTo('.page-header', { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.5, delay: 0.25, ease: 'power3.out' });
 
 setTimeout(() => showToast('◈ NEON CONTROL ROOM ONLINE'), 1200);
+
+/* Sync all slider fills to thumb center on load & resize */
+function syncAllSliderFills() {
+  document.querySelectorAll('.slider-track').forEach(track => {
+    const input = track.querySelector('.neo-slider');
+    const fill = track.querySelector('.slider-fill');
+    if (!input || !fill) return;
+    const min = parseFloat(input.min)||0, max = parseFloat(input.max)||100;
+    const pct = ((parseFloat(input.value)-min)/(max-min));
+    const thumbW = parseFloat(getComputedStyle(track).getPropertyValue('--thumb-w'))||22;
+    const trackW = track.offsetWidth||300;
+    const fillPx = (thumbW/2) + pct*(trackW-thumbW);
+    fill.style.width = ((fillPx/trackW)*100)+'%';
+  });
+}
+setTimeout(syncAllSliderFills, 400);
+window.addEventListener('resize', syncAllSliderFills);
 </script>
 </body>
 </html>
